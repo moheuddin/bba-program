@@ -1,0 +1,122 @@
+<?php
+date_default_timezone_set('Asia/Dhaka');
+
+$host = "localhost";
+$user = "usreservice";
+$password = "sVr#019#";
+$dbname = "eservice";
+$charset = 'utf8mb4';
+$sql = '';
+$sql_data = [];
+$result = '';
+$stmt = '';
+
+include(dirname(__FILE__)."/../wp-authenticate.php");
+$id = '';
+// $con = mysqli_connect($host, $user, $password, $dbname);
+
+$dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+];
+try {
+    $pdo = new PDO($dsn, $user, $password, $options);
+} catch (\PDOException $e) {
+    throw new \PDOException($e->getMessage(), (int) $e->getCode());
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+// $request = explode('/', trim($_SERVER['PATH_INFO'], '/'));
+//$input = json_decode(file_get_contents('php://input'),true);
+switch ($method) {
+    case 'GET':
+        $id = isset($_GET['id']) ? intval($_GET['id']) : '';
+        if ($id > 0) {
+            $sql = "select * from contacts where id=:id";
+            $sql_data = ['id' =>$id];
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($sql_data);
+            $result = $stmt->fetch();
+        } else {
+            $sql = "SELECT
+officer.id AS off_id,
+officer.name AS name,
+contacts.id AS id,
+contacts.date_created AS date_created,
+contacts.date_updated AS date_updated,
+contacts.disabled,
+contacts.`date` AS `date`,
+contacts.`time` AS `time`,
+contacts.description AS description,
+contacts.is_done,
+contacts.comments,
+contacts.updated_by,
+contacts.officer
+FROM officer Inner Join contacts ON contacts.officer = officer.id
+Where date >=  NOW()";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($sql_data);
+            //$result = $stmt->fetch();
+        }
+
+        break;
+    case 'POST':
+        $id = isset($_POST['id']) ? intval($_POST['id']) : '';
+        $action = isset($_POST['action']) ? $_POST['action'] : '';
+        if ($action == 'delete' && $id > 0) {
+            // delete record with id = $id
+            $sql = "update contacts set disabled = 1, date_updated = NOW() where id = :id";
+            $sql_data = ['id' => $id];
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($sql_data);
+        } else {
+            $date = isset($_POST['date']) ? $_POST['date'] : '';
+            $time = isset($_POST['time']) ? $_POST['time'] : '';
+            $description = isset($_POST['description']) ? $_POST['description'] : '';
+            $comments = isset($_POST['comments']) ? $_POST['comments'] : '';
+            $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
+            $officer = isset($_POST['officer']) ? intval($_POST['officer']) : 0;
+
+            if ($id > 0) {
+                // change existing record
+                $sql = "update contacts set date = :date, time = :time, description=:description,comments=:comments,  officer=:officer, date_updated = NOW() where id = :id";
+                $sql_data = [
+                    'date' => $date,
+                    'time' => $time,
+                    'description' => $description,
+                    'comments' => $comments,
+                    'officer' => $officer,
+                    'id' => $id,
+                ];
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($sql_data);
+                // $result = $stmt->fetch();
+
+            } else {
+                // add new record
+                $sql = "insert into contacts (date, time, description, comments,  officer, date_created) values (:date, :time, :description, :comments, :officer,  NOW())";
+                $sql_data = [
+                    'date' => $date,
+                    'time' => $time,
+                    'description' => $description,
+                    'comments' => $comments,
+                    'officer' => $officer,
+                ];
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($sql_data);
+                // $result = $stmt->fetch();
+
+            }
+        }
+        break;
+}
+
+if ($method == 'GET') {
+    echo json_encode($stmt->fetchAll());
+} elseif ($method == 'POST') {
+    echo json_encode($stmt->rowCount());
+} else {
+    echo $stmt->$rowCount();
+}

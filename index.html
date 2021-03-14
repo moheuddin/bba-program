@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily Programme of Bangladesh Bridge Authority | সেতু কর্তৃপক্ষের দৈনিক কর্মসূচী</title>
+    <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css'>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons'>
+   
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/flatpickr@4/dist/flatpickr.min.css'>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/vuetify@1.5.16/dist/vuetify.min.css'>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        .table td.edit {
+            cursor: pointer;
+        }
+
+        .table td.edit:hover {
+            text-decoration: underline;
+        }
+
+        @print {
+            @page :footer {
+                display: none
+            }
+
+            @page :header {
+                display: none
+            }
+        }
+
+        @media print {
+            .noprint {
+                display: none;
+            }
+        }
+
+        @page {
+            size: auto;
+            /* auto is the initial value */
+            margin: 20mm;
+        }
+
+        form#mysearchform {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .tabs {
+            margin-top: 20px;
+        }
+        #loader{display: block;text-align: center;}
+    </style>
+</head>
+
+<body>
+
+    <section>
+
+        <template v-if="isAuthenticate">
+
+            <div class="container">
+                <label>Search
+                    <input class="input" type="text" v-model="search" placeholder="Enter your search" /></label>
+
+            </div>
+        </template>
+        <!--<div class="hero-body">
+            <div style="text-align:center;" class="container">
+                <p class="title">সেতু বিভাগ</p>
+                <p style="font-size:14pxl;">
+                    <br>
+                    সড়ক পরিবহন ও সেতু মন্ত্রণালয়, সেতু ভবন, বনানী, ঢাকা।<br>
+                </p>
+            </div>
+        </div>-->
+
+    </section>
+    <section>
+        <div class="container">
+           
+            <div v-cloak id="app">
+                    
+                  
+                <div class="modal" :class="{ 'is-active': isModalOpen }">
+                    <div class="modal-background" @click="closeModal()"></div>
+                    <div class="modal-card">
+                        <header class="modal-card-head">
+                            <p class="modal-card-title">{{ modalTitle }}</p>
+                            <button class="delete" aria-label="close" @click="closeModal()"></button>
+                        </header>
+                        <section class="modal-card-body">
+                            <form v-on:submit.prevent>
+
+                                <div class="field">
+                                    <label class="label">কার্যক্রম</label>
+                                    <input class="input" type="text" name="description" v-model="formData.description"
+                                        required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <label class="label">তারিখ</label>
+                                        <flat-pickr v-model="formData.date" class="form-control"
+                                            placeholder="Select time" name="date">
+                                        </flat-pickr>
+
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="label">সময়</label>
+                                        <div class="input-group">
+                                            <flat-pickr v-model="formData.time" :config="config" class="form-control"
+                                                placeholder="Select time" name="time">
+                                            </flat-pickr>
+                                            <div class="input-group-btn">
+                                                <button class="btn btn-default" type="button" title="Toggle"
+                                                    data-toggle>
+                                                    <i class="fa fa-clock-o">
+                                                        <span aria-hidden="true" class="sr-only">Toggle</span>
+                                                    </i>
+                                                </button>
+                                                <button class="btn btn-default" type="button" title="Clear" data-clear>
+                                                    <i class="fa fa-times">
+                                                        <span aria-hidden="true" class="sr-only">Clear</span>
+                                                    </i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">মন্তব্য</label>
+                                    <input class="input" type="comments" name="comments" v-model="formData.comments">
+                                </div>
+
+
+                                <div class="field">
+                                    <label class="label">কর্মকর্তা</label>
+                                    <div class="select">
+                                        <select class="select" v-model="formData.officer">
+                                            <option value="0">নির্বাচন </option>
+                                            <option value="1">নির্বাহী পরিচালক</option>
+                                            <option value="2">পরিচালক (অর্থ ও হিসাব)</option>
+                                            <option value="3">পরিচালক (পিএন্ডডি)</option>
+                                            <option value="4">পরিচালক (কারিগরি/প্রধান প্রকৌশলী)</option>
+                                            <option value="5">পরিচালক (ওএন্ডএম)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                        </section>
+                        <footer class="modal-card-foot" style="justify-content: flex-end;">
+                            <button v-if="!isEditing" class="button is-primary" @click="createContact()">যুক্ত
+                                করুন</button>
+                            <button v-if="isEditing" class="button is-primary" @click="changeContact()">সংরক্ষণ</button>
+                        </footer>
+                        </form>
+
+                    </div>
+                    <button class="modal-close is-large" aria-label="close" @click="closeModal()"></button>
+                </div>
+                <div>
+                    <h1 style="text-align:center;" class="title">সচিব, সেতু বিভাগ ও নির্বাহী পরিচালক, বাংলাদেশ সেতু
+                        কর্তৃপক্ষ-এর দৈনিক কর্মসূচী</h1>
+
+                        <template v-if='isLoaded==false'>
+                            <div id="loader" style="text-align:center;">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </template>
+
+             
+
+                    <div class="tabs noprint">
+                        <ul>
+                            <li :class="{ 'is-active': !showDisabled }" @click="search_active('active')"><a>Active</a>
+                            </li>
+                            <li :class="{ 'is-active': showDisabled }" @click="search_active('previus')">
+                                <a>Previous</a>
+                            </li>
+                            <li>
+                                <div class="noprint">
+
+                                    <button @click="printpage">Printing</button>
+                                </div>
+                            </li>
+                            <template v-if="isAuthenticate">
+                                <li>
+                                    <a class="btn"
+                                        href="https://eservice.bba.gov.bd/program/login.php?logout=true">Logout</a>
+                                </li>
+                            </template>
+                        
+                        </ul>
+                        <button v-if="isAuthenticate" class="button is-primary" @click="openCreateModal()"><i
+                            class="fa fa-plus"></i></button>
+                    </div>
+
+                    <template v-if="isAuthenticate">
+
+                        <form id="mysearchform" v-on:submit.prevent class="noprint">
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="label">আরম্ভ</label>
+                                                <flat-pickr v-model="search.start_date" class="form-control"
+                                                    placeholder="Select Date" name="start_date">
+                                                </flat-pickr>
+
+                                                </label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="label">শেষ</label>
+                                                <flat-pickr v-model="search.end_date" class="form-control"
+                                                    placeholder="Select Date" name="end_date">
+                                                </flat-pickr>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                            <label class="label">কর্মকর্তা</label>
+                                            <div class="select">
+                                                <select class="select" v-model="formData.officer">
+                                                    <option value="0">নির্বাচন </option>
+                                                    <option value="1">নির্বাহী পরিচালক</option>
+                                                    <option value="2">পরিচালক (অর্থ ও হিসাব)</option>
+                                                    <option value="3">পরিচালক (পিএন্ডডি)</option>
+                                                    <option value="4">পরিচালক (কারিগরি/প্রধান প্রকৌশলী)</option>
+                                                    <option value="5">পরিচালক (ওএন্ডএম)</option>
+                                                </select>
+                                                <button type="submit" class="button is-primary"
+                                            @click="searchData()">Search</button>
+                                            </div>
+                                        </div>
+                                        
+                                   
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </form>
+                    </template>
+
+                </div>
+
+                <div id="print" v-if="isPrevious==false">
+                    <div id="loader" v-if="isLoaded==false" class="fa-3x">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                    </div>
+                    <table class="table is-striped is-hoverable" width="100%">
+                        <thead>
+                            <tr>
+                                <th @click="setOrderBy('date')">
+                                    তারিখ &nbsp;<i :class="{}" aria-hidden="true"></i></th>
+                                <th @click="setOrderBy('time')">
+                                    সময় &nbsp;<i :class="{}" aria-hidden="true"></i></th>
+                                <th @click="setOrderBy('description')">
+                                    কার্যক্রম&nbsp;<i :class="{}" aria-hidden="true"></i></th>
+                                <!--<th @click="setOrderBy('comments')">
+						মন্তব্য&nbsp;<i :class="{}" aria-hidden="true"></i></th>-->
+                                <th>মন্তব্য&nbsp;<i :class="{}" aria-hidden="true"></i></th>
+                                <th v-if="isAuthenticate" @click="setOrderBy('officer')">কর্মকর্তা</th>
+
+                                <th>&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(contact, index) in contacts" :key="contact.id">
+                                <td width="150">{{ contact.date }} <br>{{contact.day}}</td>
+                                <td>{{ contact.time }}</td>
+                                <td>{{ contact.description }}</td>
+                                <td>{{ contact.comments }}</td>
+                                <td v-if="isAuthenticate">{{ contact.name }}</td>
+
+                                <td v-if="isAuthenticate" class="edit noprint">
+                                    <ul>
+                                      <li><span class="edit noprint" @click="editContact(contact, index)">
+                                        <i class="fa fa-edit"></i></li>      
+                                        <li> </span> <span class="fa fa-window-close noprint"
+                                            @click="deleteContact(contact, index)"></span></li>
+                                    </ul>
+                                    
+                                   
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+                <div v-if="isPrevious==true">
+                    <div id="app">
+                        <v-app id="inspire">
+                          <v-toolbar dark color="primary" fixed>
+                            <v-toolbar-title class="white--text">Program</v-toolbar-title>
+                            <v-spacer></v-spacer>
+                            <v-text-field v-model="search" append-icon="search" label="Search" single-line hide-details></v-text-field>
+                            <v-menu offset-y :nudge-left="170" :close-on-content-click="false">
+                                <v-btn icon slot="activator">
+                                    <v-icon>more_vert</v-icon>
+                                  </v-btn>
+                                <v-list>
+                                  <v-list-tile  v-for="(item, index) in headers"  :key="item.value"   @click="changeSort(item.value)">
+                                    <v-list-tile-title>{{ item.text }}<v-icon v-if="pagination.sortBy === item.value">{{pagination.descending ? 'arrow_downward':'arrow_upward'}}</v-icon></v-list-tile-title>
+                                  </v-list-tile>
+                                </v-list>
+                              </v-menu>
+                          </v-toolbar>
+                              <v-layout style="padding-top:56px">
+                                <v-data-table :headers="headers" :items="contacts" :search="search" :pagination.sync="pagination" >
+                                  <template slot="items" slot-scope="props">
+                                    <tr>
+                                      <td >{{ props.item.date }}</td>
+                                      <td>{{ props.item.time }}</td>
+                                      <td>{{ props.item.description }}</td>
+                                      <td>{{ props.item.comments }}</td>
+                                      <td class="text-xs-right">
+                                        <v-btn icon class="mx-0">
+                                            <v-icon color="teal">edit</v-icon>
+                                          </v-btn>
+                                          <v-btn icon class="mx-0">
+                                            <v-icon color="pink">delete</v-icon>
+                                          </v-btn>
+                                      </td>
+                                    </tr>
+                             
+                                  </template>
+                                  <v-alert slot="no-results" :value="true" color="error" icon="warning">
+                                    Your search for "{{ search }}" found no results.
+                                  </v-alert>
+                                </v-data-table>
+                              </v-layout>
+                        </v-app>
+                      </div>
+                    
+                    <!--<table id="user-table" class="display table-bordered nowrap" cellspacing="0" width="100%">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Description</th>
+                            <th>Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                      </table>-->
+                </div>
+            </div>
+
+        </div>
+
+        </div>
+    </section>
+
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/vuex/2.1.1/vuex.min.js"></script>-->
+
+    <!--<script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js'></script>-->
+    <!--<script src='https://cdnjs.cloudflare.com/ajax/libs/vuejs-datepicker/1.5.4/vuejs-datepicker.min.js'></script>-->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/jquery.dataTables.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/flatpickr@4/dist/flatpickr.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/vue-flatpickr-component@8'></script>
+    <script src='https://cdn.jsdelivr.net/npm/vuetify@1.5.16/dist/vuetify.min.js'></script>
+
+    <script>
+        Vue.component('flat-pickr', {
+            props: ['value', 'config']
+        });
+    
+        app = new Vue({
+            el: '#app',
+            components: {
+                'flat-pickr': VueFlatpickr
+            },
+            data: {
+                dataTable:null,
+                expand: false,
+                search: '',
+                pagination: {
+                    sortBy: 'name'
+                  },
+                headers: [{
+                        text: 'Date',
+                        align: 'left',
+                        sortable: false,
+                        value: 'index'
+                    },
+
+                    {
+                        text: 'Time',
+                        value: 'time'
+                    },
+                    {
+                        text: 'Program',
+                        value: 'program'
+                    },
+                    {
+                        text: 'Comments',
+                        value: 'comments'
+                    },
+                    {
+                        text: '',
+                        value: ''
+                    }
+                ],
+                date: null,
+                dateTime: '',
+                config: {
+                    wrap: true,
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "h:i K",
+                    defaultDate: null,
+                    minuteIncrement: "1",
+                    time_24hr: true
+                },
+                formData: {
+                    date: '',
+                    time: '',
+                    start_date: '',
+                    end_date: '',
+                    description: '',
+                    comments: '',
+                    id: 0,
+                    index: '',
+                    officer: 0
+                },
+                time: null,
+                isPrevious: false,
+                asc: 'desc',
+                search: '',
+                showDisabled: 0,
+                labelDisabled: 'Show Disabled',
+                contacts: [],
+                isLoaded: false,
+                isAuthenticate: false,
+                userName: '',
+                isEditing: false,
+                isModalOpen: false,
+                modalTitle: 'নতুন কার্যক্রম'
+            },
+            mounted: function () {
+
+                this.dataTable = $('#user-table').DataTable({});
+                let self = this;
+                window.addEventListener('keyup', function (event) {
+                    // If  ESC key was pressed...
+                    if (event.keyCode === 27) {
+                        // try close your dialog
+                        self.isModalOpen = false;
+                    }
+                });
+                this.getContacts()
+                this.loading = false;
+            },
+            computed: {
+                itemsWithIndex() {
+                    return this.items.map(
+                      (items, index) => ({
+                        ...items,
+                        index: index + 1
+                      }))
+                  }
+            
+            },
+            methods: {
+                getBangla: function (english_number) {
+                    var finalEnlishToBanglaNumber = {
+                        '0': '০',
+                        '1': '১',
+                        '2': '২',
+                        '3': '৩',
+                        '4': '৪',
+                        '5': '৫',
+                        '6': '৬',
+                        '7': '৭',
+                        '8': '৮',
+                        '9': '৯'
+                    };
+
+                    String.prototype.getDigitBanglaFromEnglish = function () {
+                        var retStr = this;
+                        for (var x in finalEnlishToBanglaNumber) {
+                            retStr = retStr.replace(new RegExp(x, 'g'), finalEnlishToBanglaNumber[x]);
+                        }
+                        return retStr;
+                    };
+
+                    return bangla_converted_number = english_number.getDigitBanglaFromEnglish();
+
+                },
+                dateFormate: function (getDate) {
+                    const date = new Date(getDate)
+                    //const dateTimeFormat = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short', day: '2-digit' }) 
+                    //const [{ value: month },,{ value: day },,{ value: year }] = dateTimeFormat .formatToParts(date ) 
+                    //console.log(this.getBangla(day));
+                    //return `${day}-${month}-${year }`;
+
+                    //console.log(`${day}-${month}-${year}`) // just for fun
+
+                },
+                dayName: function (dateString) {
+                    var days = ['রবি বার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার','শনিবার'];
+                    var d = new Date(dateString);
+                    console.log(d.getDay());
+                    var dayName = days[d.getDay()];
+                    return dayName
+                },
+                getContacts: function () {
+                    axios.get('api/contacts.php?action=active')
+                        .then(function (response) {
+
+                            app.contacts = response.data.result;
+                            app.isLoaded = true;
+                            app.isAuthenticate = response.data.isAuthenticate;
+                            app.userName = response.data.userName;
+                            //console.log(response.data.message.isAuthenticate);
+                            //console.log(response.data.result);
+                            // Check the response was a success
+                            console.log(response.data);
+                            console.log(response);
+                            if (response.data.message === 'success') {
+                                //this.user = response.data.user;
+                                //app.user_loggedin=0
+
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                },
+                openModal: function () {
+                    this.isModalOpen = true;
+                },
+                toggleDisabled: function () {
+                    this.showDisabled = (this.showDisabled === 1) ? 0 : 1;
+                    this.labelDisabled = (this.showDisabled === 1) ? 'Show Active' : 'Show Disabled';
+
+                },
+                openCreateModal: function () {
+                    this.resetForm();
+                    this.openModal();
+
+                },
+                closeModal: function () {
+                    this.isModalOpen = false;
+                },
+                createContact: function () {
+                    //console.log("Create contact!")
+                    var self = this;
+
+                    //var formData = this.gatherFormData();
+                    //console.log(this.formData);
+
+                    this.openModal();
+                    let formData = new FormData();
+                    //console.log("date:", this.formData.date, "date:", this.formData.date)
+                    formData.append('date', this.formData.date || '')
+                    formData.append('time', this.formData.time || '')
+                    formData.append('description', this.formData.description || '')
+                    formData.append('comments', this.formData.comments || '')
+                    formData.append('disabled', 0)
+                    formData.append('officer', this.formData.officer || 0)
+                    formData.append('insertdata', 1);
+                    formData.forEach(function (value, key) {
+                        //contact[key] = value;
+                        //console.log(value);
+                    });
+
+
+                    axios({
+                            method: 'post',
+                            url: 'api/contacts.php',
+                            data: formData,
+                            config: {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data'
+                                }
+                            }
+                        })
+                        .then(function (response) {
+                            app.isLoaded = true;
+                            //this.contacts.push({"name": "test"}); 
+
+                            if (response.data.message === 'success') {
+                                //this.user = response.data.user;
+                                //app.user_loggedin=0
+
+                            }
+                            app.resetForm()
+                            app.getContacts()
+
+                        })
+                        .catch(function (response) {
+                            //handle error
+                            console.log(response)
+                        })
+                    // this.getContacts()
+                    // this.$forceUpdate()
+                },
+                searchData: function () {
+
+                    // this.openModal();
+                    let formData = new FormData();
+
+                    formData.append('start_date', this.formData.start_date || '')
+                    formData.append('end_date', this.formData.end_date || '')
+                    formData.append('officer', this.formData.officer || 0)
+                    var contact = {};
+                    formData.forEach(function (value, key) {
+                        //console.log(key );
+                        contact[key] = value;
+                        //console.log(value);
+
+                    });
+                    console.log(formData);
+                    axios({
+                            method: 'get',
+                            url: 'api/contacts.php',
+                            data: formData,
+                            config: {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data'
+                                }
+                            }
+                        })
+                        .then(function (response) {
+                            //handle success
+
+                            app.contacts = response.data.result;
+                            console.log(response)
+
+                            //app.resetForm()
+
+                        })
+                        .catch(function (response) {
+                            //handle error
+                            //console.log(response)
+                        })
+                },
+                editContact: function (contact, index) {
+                    this.formData = contact;
+                    this.isEditing = true;
+                    this.modalTitle = 'সম্পাদন';
+                    this.openModal();
+                },
+                deleteContact: function (contact, index) {
+                    this.formData = contact;
+                    if (confirm("Are you sure you want to delete, " + contact.id + "?")) {
+                        //console.log("Deleting: " + contact.id + " Index: " + index);
+                        let formData = new FormData();
+                        formData.append('id', contact.id)
+                        formData.append('action', 'delete')
+                        axios({
+                                method: 'post',
+                                url: 'api/contacts.php',
+                                data: formData,
+                                config: {
+                                    headers: {
+                                        'Content-Type': 'multipart/form-data'
+                                    }
+                                }
+                            })
+                            .then(function (response) {
+                                console.log(response)
+                                //app.contacts.splice(contact, index) 
+                                app.getContacts()
+                                app.resetForm();
+                            })
+                            .catch(function (response) {
+                                //handle error
+                                //console.log(response)
+                            });
+                    }
+                },
+                changeContact: function () {
+                    console.log("Change contact!")
+
+                    let formData = new FormData();
+                    console.log("date:", this.formData.date, "id:", this.formData.id, " key:", this.formData
+                        .index)
+                    formData.append('id', this.formData.id)
+                    //formData.append('date', this.formData.date || '')
+                    //formData.append('time', this.formData.time || '')
+                    formData.append('description', this.formData.description || '')
+                    formData.append('comments', this.formData.comments || '')
+                    formData.append('officer', this.formData.officer || 0)
+                    var contact = {};
+                    formData.forEach(function (value, key) {
+                        contact[key] = value;
+                    });
+
+                    axios({
+                            method: 'post',
+                            url: 'api/contacts.php?action=active',
+                            data: formData,
+                            config: {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data'
+                                }
+                            }
+                        })
+                        .then(function (response) {
+                            //handle success
+                            console.log(response)
+                            // Vue.set(app.filteredContacts, app.index, contact)
+                            app.resetForm();
+                        })
+                        .catch(function (response) {
+                            //handle error
+                            console.log(response)
+                        });
+                },
+                resetForm: function () {
+                    this.formData = {};
+                    this.isEditing = false;
+                    this.closeModal();
+
+                },
+                search_active: function (active) {
+                    this.showDisabled = (this.showDisabled === 1) ? 0 : 1;
+
+                    console.log(active)
+                    if (active === 'previus') {
+                        this.isPrevious = true;
+                    } else {
+                        this.isPrevious = false;
+                    }
+                    app.isLoaded = false;
+                    axios.get("api/contacts.php?action=" + active)
+                        .then(function (response) {
+                            app.contacts = response.data.result;
+                            app.isLoaded = true;
+
+                            console.log(response);
+                            this.isLoading = false;
+                            if (response.data.message === 'success') {
+                                //this.user = response.data.user;
+                                //app.user_loggedin=0
+                                app.isLoaded = true;
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+
+                        this.dataTable = $('#user-table').DataTable({});
+                        this.contacts.forEach(user=>{
+                            this.dataTable.row.add([
+                            user.date,
+                            user.time,
+                            user.description,
+                              user.comments
+                            ]).draw(false) 
+                            })
+                      
+                },
+                changecss() {
+                    console.log('changecss')
+                    this.cssPagedMedia.size = (size) => {
+                        this.cssPagedMedia('@page {size: ' + size + '}');
+                    };
+                    this.cssPagedMedia.size(this.pagesize);
+                },
+                printpage() {
+                    window.print()
+                },
+                editItem:function(contact){
+                    console.log(contact)
+                    console.log(this.contacts.indexOf(contact));
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
